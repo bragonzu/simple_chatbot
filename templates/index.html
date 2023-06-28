@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChatBot</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        #chat-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .message-card {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>ChatBot</h1>
+
+    <div id="chat-container">
+        <div id="mensajes"></div>
+        <div id="entrada">
+            <input type="text" id="mensaje" class="form-control" placeholder="Escribe un mensaje...">
+            <button onclick="enviarMensaje()" class="btn btn-primary mt-2">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        function enviarMensaje() {
+            var mensaje = document.getElementById("mensaje").value;
+            document.getElementById("mensaje").value = "";
+
+            var mensajesContainer = document.getElementById("mensajes");
+            var cardHtml = `
+                <div class="card message-card">
+                    <div class="card-body">
+                        <p class="card-text">Tú: ${mensaje}</p>
+                    </div>
+                </div>`;
+            mensajesContainer.innerHTML += cardHtml;
+
+            fetch("/get_response", {
+                method: "POST",
+                body: new URLSearchParams({
+                    mensaje: mensaje
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                var respuesta = data.respuesta;
+                var mensajesAnteriores = data.mensajes;
+                
+                var respuestaCardHtml = `
+                    <div class="card message-card">
+                        <div class="card-body">
+                            <p class="card-text">ChatBot: ${respuesta}</p>
+                        </div>
+                    </div>`;
+                mensajesContainer.innerHTML += respuestaCardHtml;
+                
+                // Agrega los mensajes anteriores en la interfaz
+                for (var i = 0; i < mensajesAnteriores.length; i++) {
+                    var mensajeAnterior = mensajesAnteriores[i][0];
+                    var respuestaAnterior = mensajesAnteriores[i][1];
+                    var mensajeCardHtml = `
+                        <div class="card message-card">
+                            <div class="card-body">
+                                <p class="card-text">Tú: ${mensajeAnterior}</p>
+                            </div>
+                        </div>`;
+                    var respuestaCardHtml = `
+                        <div class="card message-card">
+                            <div class="card-body">
+                                <p class="card-text">ChatBot: ${respuestaAnterior}</p>
+                            </div>
+                        </div>`;
+                    mensajesContainer.innerHTML += mensajeCardHtml;
+                    mensajesContainer.innerHTML += respuestaCardHtml;
+                }
+
+                // Scroll hacia abajo para mostrar el mensaje más reciente
+                mensajesContainer.scrollTop = mensajesContainer.scrollHeight;
+            })
+            .catch(error => console.log(error));
+        }
+    </script>
+</body>
+</html>
